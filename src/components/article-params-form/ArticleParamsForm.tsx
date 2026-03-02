@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import clsx from 'clsx';
 
 import { ArrowButton } from 'src/ui/arrow-button';
@@ -20,6 +20,8 @@ import {
 
 import styles from './ArticleParamsForm.module.scss';
 
+import { useOutsideClickClose } from 'src/ui/select/hooks/useOutsideClickClose';
+
 type ArticleParamsFormProps = {
 	appliedState: ArticleStateType;
 	onApply: (state: ArticleStateType) => void;
@@ -33,16 +35,26 @@ export const ArticleParamsForm = ({
 }: ArticleParamsFormProps) => {
 	const [isOpen, setIsOpen] = useState(false);
 	const [formState, setFormState] = useState<ArticleStateType>(appliedState);
+	const asideRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		if (isOpen) setFormState(appliedState);
 	}, [isOpen, appliedState]);
 
-	const handleApply = () => {
+	useOutsideClickClose({
+		isOpen,
+		rootRef: asideRef,
+		onClose: () => setIsOpen(false),
+		onChange: setIsOpen,
+	});
+
+	const handleApply = (e: React.FormEvent) => {
+		e.preventDefault();
 		onApply(formState);
 		setIsOpen(false);
 	};
-	const handleReset = () => {
+	const handleReset = (e: React.FormEvent) => {
+		e.preventDefault();
 		setFormState(defaultArticleState);
 		onReset();
 	};
@@ -51,10 +63,12 @@ export const ArticleParamsForm = ({
 			<ArrowButton isOpen={isOpen} onClick={() => setIsOpen((v) => !v)} />
 
 			<aside
-				className={clsx(styles.container, {
-					[styles.container_open]: isOpen,
-				})}>
-				<div className={styles.form}>
+				ref={asideRef}
+				className={clsx(styles.container, { [styles.container_open]: isOpen })}>
+				<form
+					className={styles.form}
+					onSubmit={handleApply}
+					onReset={handleReset}>
 					<Text as='h2' size={31} weight={800} uppercase={true}>
 						Задайте параметры
 					</Text>
@@ -108,12 +122,11 @@ export const ArticleParamsForm = ({
 					/>
 
 					<div className={styles.bottomContainer}>
-						<Button title='Сбросить' onClick={handleReset} type='clear' />
-						<Button title='Применить' onClick={handleApply} type='apply' />
+						<Button title='Сбросить' htmlType='reset' type='clear' />
+						<Button title='Применить' htmlType='submit' type='apply' />
 					</div>
-				</div>
+				</form>
 			</aside>
 		</>
 	);
 };
-//
